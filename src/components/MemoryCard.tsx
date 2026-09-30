@@ -79,6 +79,14 @@ export default function MemoryCard({ memory, index, isExpanded, onToggle, onEdit
                   <Heart className="w-3 h-3 fill-current" /> 想再闻
                 </span>
               )}
+              {memory.observation_id && (
+                <span
+                  className="scent-tag bg-paper-200/70 text-ink-700/70"
+                  title={`原始读数 ${memory.raw_intensity ?? memory.intensity} · 采样于 ${memory.sampled_at ? formatDate(memory.sampled_at) : '—'} · ${memory.observer ?? '匿名'} 记录`}
+                >
+                  {memory.calibration_id ? '⚖️ 已校准' : '○ 未校准'} · {memory.observer ?? '匿名'}
+                </span>
+              )}
             </div>
 
             <div className="space-y-1.5">

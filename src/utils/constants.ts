@@ -1,22 +1,11 @@
-export type Season = 'spring' | 'summer' | 'autumn' | 'winter';
-export type SmellType = 'woody' | 'floral' | 'fruity' | 'earthy' | 'spicy' | 'sweet' | 'musty' | 'fresh' | 'burnt' | 'other';
-export type Emotion = 'warm' | 'nostalgic' | 'peaceful' | 'melancholy' | 'joyful' | 'uncomfortable' | 'surprising';
+/**
+ * 枚举与展示常量。
+ * 领域类型（Season/SmellType/Emotion/SmellMemory）定义在台账核心，这里统一再导出，
+ * 保证既有导入路径（../utils/constants）不变。
+ */
+import type { Season, SmellType, Emotion } from '../lib/ledger/types';
 
-export interface SmellMemory {
-  id: string;
-  location: string;
-  source_guess: string;
-  intensity: number;
-  humidity: number;
-  season: Season;
-  smell_type: SmellType;
-  memory_text: string;
-  color_association: string;
-  emotion: Emotion;
-  want_again: boolean;
-  created_at: string;
-  updated_at: string;
-}
+export type { Season, SmellType, Emotion, SmellMemory } from '../lib/ledger/types';
 
 export const SEASONS: { value: Season; label: string; emoji: string }[] = [
   { value: 'spring', label: '春', emoji: '🌸' },

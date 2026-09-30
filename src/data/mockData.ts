@@ -1,9 +1,9 @@
-import type { SmellMemory } from '../utils/constants';
+import type { LegacyMemoryLike } from '../lib/ledger/ledger';
 
 const now = Date.now();
 const daysAgo = (d: number) => new Date(now - d * 86400000).toISOString();
 
-export const mockMemories: SmellMemory[] = [
+export const mockMemories: LegacyMemoryLike[] = [
   {
     id: 'mock-001',
     location: '外婆家的老衣柜',

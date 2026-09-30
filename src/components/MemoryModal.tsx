@@ -34,9 +34,19 @@ export default function MemoryModal({ isOpen, onClose, onSubmit, editingData }: 
   useEffect(() => {
     if (isOpen) {
       if (editingData) {
-        const { id, created_at, updated_at, ...rest } = editingData;
-        void id; void created_at; void updated_at;
-        setForm(rest);
+        // 表单回填「原始读数」（校准前）；卡片上显示的是校准后的值。
+        setForm({
+          location: editingData.location,
+          source_guess: editingData.source_guess,
+          intensity: editingData.raw_intensity ?? editingData.intensity,
+          humidity: editingData.raw_humidity ?? editingData.humidity,
+          season: editingData.season,
+          smell_type: editingData.smell_type,
+          memory_text: editingData.memory_text,
+          color_association: editingData.color_association,
+          emotion: editingData.emotion,
+          want_again: editingData.want_again,
+        });
       } else {
         setForm(defaultForm);
       }
@@ -132,6 +142,11 @@ export default function MemoryModal({ isOpen, onClose, onSubmit, editingData }: 
             <div className="flex items-center gap-2 pb-2 border-b border-paper-200">
               <span className="w-1.5 h-6 bg-moss-500 rounded-full" />
               <h3 className="font-hand text-xl text-moss-600">感官属性</h3>
+              {editingData?.calibration_id && (
+                <span className="ml-auto text-[11px] text-moss-600/80 bg-moss-100 px-2 py-0.5 rounded-full">
+                  表单为原始读数，卡片显示校准后的值
+                </span>
+              )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">

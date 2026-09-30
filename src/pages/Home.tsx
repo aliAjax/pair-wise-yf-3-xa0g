@@ -4,12 +4,14 @@ import FilterPanel from '../components/FilterPanel';
 import VisualizationPanel from '../components/VisualizationPanel';
 import MemoryCard from '../components/MemoryCard';
 import MemoryModal from '../components/MemoryModal';
+import ConflictBanner from '../components/ConflictBanner';
+import LedgerPanel from '../components/LedgerPanel';
 import { useMemoryStore } from '../store/memoryStore';
 import type { Filters } from '../utils/helpers';
 import { filterMemories } from '../utils/helpers';
 import type { SmellMemory } from '../utils/constants';
 import type { MemoryInput } from '../store/memoryStore';
-import { BookOpenCheck } from 'lucide-react';
+import { BookOpenCheck, Scale } from 'lucide-react';
 
 const defaultFilters: Filters = {
   smellType: '',
@@ -18,15 +20,24 @@ const defaultFilters: Filters = {
 };
 
 export default function Home() {
-  const { memories, initIfEmpty, addMemory, updateMemory, deleteMemory } = useMemoryStore();
+  const {
+    memories, initIfEmpty, addMemory, updateMemory, deleteMemory,
+    conflict, dismissConflict, forceOverwrite,
+  } = useMemoryStore();
   const [filters, setFilters] = useState<Filters>(defaultFilters);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [ledgerOpen, setLedgerOpen] = useState(false);
   const [editing, setEditing] = useState<SmellMemory | null>(null);
 
   useEffect(() => {
     initIfEmpty();
   }, [initIfEmpty]);
+
+  const conflictLocation = useMemo(
+    () => memories.find((m) => m.id === conflict?.sessionId)?.location ?? '这段记忆',
+    [memories, conflict],
+  );
 
   const filteredMemories = useMemo(
     () => filterMemories(memories, filters),
@@ -86,9 +97,17 @@ export default function Home() {
               <BookOpenCheck className="w-5 h-5" />
               气味档案
             </h2>
-            <span className="text-xs text-ink-700/50">
-              点击卡片展开完整回忆
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-ink-700/50 hidden sm:inline">
+                点击卡片展开完整回忆
+              </span>
+              <button
+                onClick={() => setLedgerOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm text-ochre-600 bg-ochre-100/70 hover:bg-ochre-100 border border-ochre-200 transition-colors"
+              >
+                <Scale className="w-4 h-4" /> 校准台账
+              </button>
+            </div>
           </div>
 
           {filteredMemories.length === 0 ? (
@@ -144,6 +163,17 @@ export default function Home() {
         onSubmit={handleSubmit}
         editingData={editing}
       />
+
+      {conflict && (
+        <ConflictBanner
+          conflict={conflict}
+          location={conflictLocation}
+          onDismiss={dismissConflict}
+          onForceOverwrite={forceOverwrite}
+        />
+      )}
+
+      <LedgerPanel isOpen={ledgerOpen} onClose={() => setLedgerOpen(false)} />
     </div>
   );
 }
