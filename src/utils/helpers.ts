@@ -1,4 +1,4 @@
-import type { SmellMemory } from './constants';
+import type { MemoryView } from '../ledger/types';
 
 export function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 9);
@@ -18,13 +18,17 @@ export interface Filters {
   smellType: string;
   season: string;
   emotion: string;
+  /** 校准状态筛选：'' 全部 / calibrated / uncalibrated / invalidated */
+  calibration: '' | 'calibrated' | 'uncalibrated' | 'invalidated';
 }
 
-export function filterMemories(memories: SmellMemory[], filters: Filters): SmellMemory[] {
+/** 卡片与筛选都消费投影出来的 MemoryView（重算后自动一致） */
+export function filterMemories(memories: MemoryView[], filters: Filters): MemoryView[] {
   return memories.filter(m => {
     if (filters.smellType && m.smell_type !== filters.smellType) return false;
     if (filters.season && m.season !== filters.season) return false;
     if (filters.emotion && m.emotion !== filters.emotion) return false;
+    if (filters.calibration && m.calibration.status !== filters.calibration) return false;
     return true;
   });
 }
@@ -35,7 +39,7 @@ export interface IntensityDistribution {
   range: [number, number];
 }
 
-export function getIntensityDistribution(memories: SmellMemory[]): IntensityDistribution[] {
+export function getIntensityDistribution(memories: Pick<MemoryView, 'intensity'>[]): IntensityDistribution[] {
   const buckets = [
     { bucket: '1-2', range: [1, 2] as [number, number] },
     { bucket: '3-4', range: [3, 4] as [number, number] },
@@ -49,13 +53,13 @@ export function getIntensityDistribution(memories: SmellMemory[]): IntensityDist
   }));
 }
 
-export function getAverageIntensity(memories: SmellMemory[]): number {
+export function getAverageIntensity(memories: Pick<MemoryView, 'intensity'>[]): number {
   if (!memories.length) return 0;
   const sum = memories.reduce((acc, m) => acc + m.intensity, 0);
   return Math.round((sum / memories.length) * 10) / 10;
 }
 
-export function getTopIntensityMemories(memories: SmellMemory[], n = 5): SmellMemory[] {
+export function getTopIntensityMemories(memories: MemoryView[], n = 5): MemoryView[] {
   return [...memories].sort((a, b) => b.intensity - a.intensity).slice(0, n);
 }
 
@@ -76,4 +80,16 @@ export function isLightColor(hex: string): boolean {
 
 export function contrastTextColor(hex: string): string {
   return isLightColor(hex) ? '#2A2118' : '#FBF7EE';
+}
+
+// -- 采样时刻（datetime-local）与 ISO 互转 -----------------------------------
+
+export function toLocalInput(iso: string): string {
+  const d = new Date(iso);
+  const pad = (v: number) => String(v).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+export function fromLocalInput(value: string): string {
+  return new Date(value).toISOString();
 }

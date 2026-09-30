@@ -89,6 +89,24 @@ export default function FilterPanel({ filters, onChange, onReset, resultCount }:
                 ))}
               </select>
             </div>
+
+            <div className="relative">
+              <select
+                value={filters.calibration}
+                onChange={(e) => onChange('calibration', e.target.value)}
+                className={`${makeSelectClass(!!filters.calibration)} w-full sm:w-auto`}
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23${filters.calibration ? 'FBF7EE' : '8B5A2B'}' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'right 12px center',
+                }}
+              >
+                <option value="">全部校准状态</option>
+                <option value="calibrated">🧪 已校准</option>
+                <option value="uncalibrated">📄 未校准（原始读数）</option>
+                <option value="invalidated">⚠️ 基线已撤回</option>
+              </select>
+            </div>
           </div>
 
           <button

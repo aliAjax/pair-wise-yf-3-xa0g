@@ -1,10 +1,10 @@
 import { useMemo } from 'react';
-import type { SmellMemory } from '../../utils/constants';
+import type { MemoryView } from '../../ledger/types';
 import { getTopIntensityMemories, contrastTextColor } from '../../utils/helpers';
 import { getSeasonInfo, getSmellTypeInfo } from '../../utils/constants';
 
 interface Props {
-  memories: SmellMemory[];
+  memories: MemoryView[];
   onSelect?: (id: string) => void;
 }
 

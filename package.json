@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "check": "tsc -b --noEmit"
+    "check": "tsc -b --noEmit",
+    "test": "esbuild src/ledger/__tests__/ledger.test.ts --bundle --platform=node --format=esm --outfile=node_modules/.tmp/ledger.test.mjs --log-level=warning && node --test node_modules/.tmp/ledger.test.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",

@@ -1,20 +1,23 @@
-import { useEffect, useRef, useState } from 'react';
-import { X } from 'lucide-react';
-import type { SmellMemory, Season, SmellType, Emotion } from '../utils/constants';
+import { useEffect, useState } from 'react';
+import { X, Lock } from 'lucide-react';
+import type { Season, SmellType, Emotion } from '../utils/constants';
 import { SEASONS, SMELL_TYPES, EMOTIONS } from '../utils/constants';
-import type { MemoryInput } from '../store/memoryStore';
+import type { ObservationForm } from '../store/memoryStore';
+import type { MemoryView } from '../ledger/types';
+import { toLocalInput } from '../utils/helpers';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: MemoryInput) => void;
-  editingData: SmellMemory | null;
+  archivist: string;
+  editingData: MemoryView | null;
+  onAdd: (form: ObservationForm) => void;
+  onEdit: (memory: MemoryView, patch: Partial<ObservationForm>) => void;
 }
 
-const defaultForm: MemoryInput = {
+const defaultForm: ObservationForm = {
   location: '',
   source_guess: '',
-  intensity: 5,
   humidity: 5,
   season: 'autumn',
   smell_type: 'woody',
@@ -22,30 +25,47 @@ const defaultForm: MemoryInput = {
   color_association: '#8B5A2B',
   emotion: 'nostalgic',
   want_again: true,
+  archivist: '林档案员',
+  sampledAt: new Date().toISOString(),
+  rawIntensity: 5,
 };
 
 const intensityTicks = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 const humidityTicks = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
-export default function MemoryModal({ isOpen, onClose, onSubmit, editingData }: Props) {
-  const [form, setForm] = useState<MemoryInput>(defaultForm);
-  const modalRef = useRef<HTMLDivElement>(null);
+export default function MemoryModal({ isOpen, onClose, archivist, editingData, onAdd, onEdit }: Props) {
+  const [form, setForm] = useState<ObservationForm>(defaultForm);
+  const [sampledLocal, setSampledLocal] = useState(toLocalInput(defaultForm.sampledAt));
 
   useEffect(() => {
     if (isOpen) {
       if (editingData) {
-        const { id, created_at, updated_at, ...rest } = editingData;
-        void id; void created_at; void updated_at;
-        setForm(rest);
+        setForm({
+          location: editingData.location,
+          source_guess: editingData.source_guess,
+          humidity: editingData.humidity,
+          season: editingData.season,
+          smell_type: editingData.smell_type,
+          memory_text: editingData.memory_text,
+          color_association: editingData.color_association,
+          emotion: editingData.emotion,
+          want_again: editingData.want_again,
+          archivist: editingData.archivist,
+          sampledAt: editingData.sampledAt,
+          rawIntensity: editingData.rawIntensity,
+        });
+        setSampledLocal(toLocalInput(editingData.sampledAt));
       } else {
-        setForm(defaultForm);
+        const nowIso = new Date().toISOString();
+        setForm({ ...defaultForm, archivist, sampledAt: nowIso });
+        setSampledLocal(toLocalInput(nowIso));
       }
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
     }
     return () => { document.body.style.overflow = ''; };
-  }, [isOpen, editingData]);
+  }, [isOpen, editingData, archivist]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -53,14 +73,30 @@ export default function MemoryModal({ isOpen, onClose, onSubmit, editingData }: 
     return () => window.removeEventListener('keydown', onKey);
   }, [isOpen, onClose]);
 
-  const update = <K extends keyof MemoryInput>(key: K, value: MemoryInput[K]) => {
+  const update = <K extends keyof ObservationForm>(key: K, value: ObservationForm[K]) => {
     setForm((f) => ({ ...f, [key]: value }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.location.trim()) return;
-    onSubmit(form);
+    if (editingData) {
+      const patch: Partial<ObservationForm> = {
+        location: form.location,
+        source_guess: form.source_guess,
+        humidity: form.humidity,
+        season: form.season,
+        smell_type: form.smell_type,
+        memory_text: form.memory_text,
+        color_association: form.color_association,
+        emotion: form.emotion,
+        want_again: form.want_again,
+        sampledAt: new Date(sampledLocal).toISOString(),
+      };
+      onEdit(editingData, patch);
+    } else {
+      onAdd({ ...form, sampledAt: new Date(sampledLocal).toISOString() });
+    }
     onClose();
   };
 
@@ -74,7 +110,6 @@ export default function MemoryModal({ isOpen, onClose, onSubmit, editingData }: 
         style={{ animation: 'fadeIn 0.3s ease-out' }}
       />
       <div
-        ref={modalRef}
         className="relative w-full max-w-2xl bg-paper-50 rounded-3xl shadow-2xl border border-paper-300 animate-slideDown"
         style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.54 0 0 0 0 0.35 0 0 0 0 0.18 0 0 0 0.04 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
@@ -83,10 +118,12 @@ export default function MemoryModal({ isOpen, onClose, onSubmit, editingData }: 
         <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-paper-200 rounded-t-3xl bg-paper-50/95 backdrop-blur">
           <div>
             <h2 className="font-serif text-2xl font-bold text-ink-800">
-              {editingData ? '编辑这段气味' : '封存一段新气味'}
+              {editingData ? '修订这段气味的叙述' : '登记一次闻样'}
             </h2>
             <p className="text-sm text-ink-700/60 mt-0.5 font-hand">
-              {editingData ? '回忆已经变了吗？修改它吧～' : '把此刻空气中的味道记录下来'}
+              {editingData
+                ? `原始读数 ${editingData.rawIntensity}/10 只追加、不可改；改采样时刻会按基线重算`
+                : '原始强度直接入账，之后只能靠校准基线修正'}
             </p>
           </div>
           <button
@@ -101,7 +138,7 @@ export default function MemoryModal({ isOpen, onClose, onSubmit, editingData }: 
           <div className="space-y-4">
             <div className="flex items-center gap-2 pb-2 border-b border-paper-200">
               <span className="w-1.5 h-6 bg-ochre-500 rounded-full" />
-              <h3 className="font-hand text-xl text-ochre-600">基础信息</h3>
+              <h3 className="font-hand text-xl text-ochre-600">闻样信息</h3>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -125,7 +162,35 @@ export default function MemoryModal({ isOpen, onClose, onSubmit, editingData }: 
                   className="scent-input"
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-ink-700 mb-1.5">
+                  档案员（闻样人）
+                </label>
+                <input
+                  type="text"
+                  value={form.archivist}
+                  onChange={(e) => update('archivist', e.target.value)}
+                  disabled={!!editingData}
+                  placeholder="例如：林档案员"
+                  className="scent-input disabled:opacity-60"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-ink-700 mb-1.5">
+                  采样时刻（决定适用哪条基线）
+                </label>
+                <input
+                  type="datetime-local"
+                  required
+                  value={sampledLocal}
+                  onChange={(e) => setSampledLocal(e.target.value)}
+                  className="scent-input"
+                />
+              </div>
             </div>
+            <p className="text-[11px] text-ink-700/50">
+              同地点、同采样时刻视为同一次闻样：两位档案员同时保存时只留先到者的一份原始读数，后到者登记为冲突。
+            </p>
           </div>
 
           <div className="space-y-4">
@@ -137,9 +202,12 @@ export default function MemoryModal({ isOpen, onClose, onSubmit, editingData }: 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium text-ink-700">气味强度</label>
+                  <label className="text-sm font-medium text-ink-700 flex items-center gap-1">
+                    原始强度
+                    {editingData && <Lock className="w-3 h-3 text-ink-700/40" />}
+                  </label>
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-ochre-100 text-ochre-600 font-semibold text-sm">
-                    {form.intensity} / 10
+                    {form.rawIntensity} / 10
                   </span>
                 </div>
                 <input
@@ -147,14 +215,20 @@ export default function MemoryModal({ isOpen, onClose, onSubmit, editingData }: 
                   min={1}
                   max={10}
                   step={1}
-                  value={form.intensity}
-                  onChange={(e) => update('intensity', Number(e.target.value))}
-                  className="scent-slider"
+                  value={form.rawIntensity}
+                  onChange={(e) => update('rawIntensity', Number(e.target.value))}
+                  disabled={!!editingData}
+                  className="scent-slider disabled:opacity-50"
                 />
                 <div className="scent-slider-ticks">
                   {intensityTicks.map((v) => (
                     <span key={v} data-value={v} />
                   ))}
+                </div>
+                <div className="text-[11px] text-ink-700/50 mt-1">
+                  {editingData
+                    ? '原始读数不可修改；嗅觉变钝请登记校准基线'
+                    : '读数按当时的鼻子状态如实记录，校准事后统一重算'}
                 </div>
               </div>
 
@@ -307,7 +381,7 @@ export default function MemoryModal({ isOpen, onClose, onSubmit, editingData }: 
               取消
             </button>
             <button type="submit" className="btn-primary">
-              {editingData ? '保存修改' : '封存这段记忆'}
+              {editingData ? '保存修订（触发重算）' : '追加原始读数'}
             </button>
           </div>
         </form>

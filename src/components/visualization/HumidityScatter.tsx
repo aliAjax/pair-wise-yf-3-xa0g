@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
-import type { SmellMemory } from '../../utils/constants';
+import type { MemoryView } from '../../ledger/types';
 import { getSmellTypeInfo } from '../../utils/constants';
 
 interface Props {
-  memories: SmellMemory[];
+  memories: MemoryView[];
 }
 
 export default function HumidityScatter({ memories }: Props) {

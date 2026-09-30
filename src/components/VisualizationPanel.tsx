@@ -1,11 +1,11 @@
-import type { SmellMemory } from '../utils/constants';
+import type { MemoryView } from '../ledger/types';
 import IntensityChart from './visualization/IntensityChart';
 import AvgGauge from './visualization/AvgGauge';
 import HumidityScatter from './visualization/HumidityScatter';
 import TopList from './visualization/TopList';
 
 interface Props {
-  memories: SmellMemory[];
+  memories: MemoryView[];
   onSelect: (id: string) => void;
 }
 

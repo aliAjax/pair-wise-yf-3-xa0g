@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
-import type { SmellMemory } from '../../utils/constants';
+import type { MemoryView } from '../../ledger/types';
 import { getAverageIntensity } from '../../utils/helpers';
 
 interface Props {
-  memories: SmellMemory[];
+  memories: MemoryView[];
 }
 
 export default function AvgGauge({ memories }: Props) {
